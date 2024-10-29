@@ -6,11 +6,46 @@ class WelcomeScreen extends StatefulWidget {
   _WelcomeScreenState createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController animationController;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    animationController = AnimationController(
+      // lowerBound: 5.0,
+      // upperBound: 20.0,
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+
+    animationController.forward();
+    // animationController.reverse(from: 25.0);
+
+    animationController.addListener(
+      () {
+        setState(() {});
+        // print(animationController.value);
+      },
+    );
+    // animationController.addStatusListener((status){
+    //     print(status);
+    // });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    animationController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.blue,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
@@ -19,12 +54,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           children: <Widget>[
             Row(
               children: <Widget>[
-                Container(
-                  child: Image.asset('assets/images/logo.png'),
-                  height: 60.0,
+                Hero(
+                  tag: "image",
+                  child: Container(
+                    child: Image.asset('assets/images/logo.png'),
+                    height: 60.0*animationController.value,
+                  ),
                 ),
-                const Text(
-                  'Flash Chat',
+                Text(
+                  // '${(animationController.value * 100).toStringAsFixed(0)}%',
+                  "Flash Chat",
                   style: TextStyle(
                     color: Colors.red,
                     fontSize: 45.0,
@@ -44,7 +83,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 borderRadius: BorderRadius.circular(30.0),
                 child: MaterialButton(
                   onPressed: () {
-              
                     Navigator.pushNamed(context, ScreenNames.login_screen);
                   },
                   minWidth: 200.0,
