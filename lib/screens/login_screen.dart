@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flash_chat2/screen_names.dart';
@@ -16,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool loginStatus = false;
-  User? user;
+  UserCredential? userCredential;
 
   login() async {
     try {
@@ -24,19 +26,23 @@ class _LoginScreenState extends State<LoginScreen> {
         _email = emailController.text.trim();
         _password = passwordController.text;
 
-        final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        userCredential = await _firebaseAuth.signInWithEmailAndPassword(
             email: _email, password: _password);
-        user = userCredential.user;
-        print(user);
       }
-    } catch (e) {
+    } on SocketException catch (e) {
+      print("internet error $e");
+    } on FirebaseAuthException catch (e) {
       AnimatedSnackBar.material(
         '$e',
         type: AnimatedSnackBarType.error,
       ).show(context);
+      print("firebase error $e");
+    } catch (e) {
+      print(e);
     }
-    emailController.clear();
-    passwordController.clear();
+    return userCredential;
+    // emailController.clear();
+    // passwordController.clear();
   }
 
   @override
@@ -140,12 +146,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: MaterialButton(
                   onPressed: () async {
                     //Implement login functionality
-                    await login();
-                    if (user?.uid == null) {
-                      return;
-                    } else {
+                    userCredential = null;
+                    final currentUser = await login();
+                    if (currentUser != null) {
                       Navigator.pushNamed(context, ScreenNames.chat_screen);
                     }
+                    print(currentUser);
                   },
                   minWidth: 200.0,
                   height: 42.0,
