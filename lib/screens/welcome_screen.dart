@@ -1,5 +1,7 @@
 import 'package:flash_chat2/screen_names.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class WelcomeScreen extends StatefulWidget {
   @override
@@ -9,6 +11,7 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController animationController;
+  late Animation animation;
 
   @override
   void initState() {
@@ -21,18 +24,23 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       vsync: this,
     );
 
-    animationController.forward();
-    // animationController.reverse(from: 25.0);
+    // final animation =
+    //     CurvedAnimation(parent: animationController, curve: Curves.decelerate);
 
+    animation = ColorTween(begin: Colors.green, end: Colors.blue)
+        .animate(animationController);
+
+    animation.addListener(() {
+      setState(() {
+        print(animation.value);
+      });
+    });
     animationController.addListener(
       () {
         setState(() {});
-        // print(animationController.value);
+        animation.value;
       },
     );
-    // animationController.addStatusListener((status){
-    //     print(status);
-    // });
   }
 
   @override
@@ -45,7 +53,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
+      backgroundColor: animation.value,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
@@ -58,18 +66,33 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   tag: "image",
                   child: Container(
                     child: Image.asset('assets/images/logo.png'),
-                    height: 60.0*animationController.value,
+                    height: 60.0,
                   ),
                 ),
-                Text(
-                  // '${(animationController.value * 100).toStringAsFixed(0)}%',
-                  "Flash Chat",
+                DefaultTextStyle(
                   style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 45.0,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 40.0,
+                  ),
+                  child: AnimatedTextKit(
+                    animatedTexts: [
+                      WavyAnimatedText('Flash Chat'),
+                    ],
+                    isRepeatingAnimation: true,
+                    onTap: () {
+                      print("Tap Event");
+                    },
                   ),
                 ),
+                // Text(
+                //   // '${(animationController.value * 100).toStringAsFixed(0)}%',
+                //   "Flash Chat",
+                //   style: TextStyle(
+                //     color: Colors.white,
+                //     fontSize: 45.0,
+                //     fontWeight: FontWeight.w900,
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(

@@ -8,8 +8,8 @@ import 'package:flash_chat2/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   WidgetsFlutterBinding.ensureInitialized();
+  Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(FlashChat());
 }
 // singletickerprovidermixin
@@ -18,6 +18,7 @@ void main() {
 // curvedanimation
 // addlistner
 // ColorTween
+//mixin
 
 class FlashChat extends StatelessWidget {
   @override
