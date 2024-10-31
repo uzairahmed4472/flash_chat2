@@ -3,6 +3,8 @@ import 'package:flash_chat2/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+User? user;
+
 class ChatScreen extends StatefulWidget {
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -11,8 +13,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
   final _firstore = FirebaseFirestore.instance;
-  User? user;
   final textEditingController = TextEditingController();
+  String? messageText = "";
 
   checkUser() {
     user = _auth.currentUser;
@@ -21,18 +23,28 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future fetchMessages() async {
-    final list = [];
-    final querySnapshot = await _firstore.collection("messages").get();
+  // Future fetchMessages() async {
+  //   final list = [];
+  //   final querySnapshot = await _firstore.collection("messages").get(); //querysnapshot
+  //   final listQS = querySnapshot.docs; //convet to listQS
+  //   for (var document in listQS) {
+  //     document.data();
+  //     list.add(document.data());
+  //   }
+  //   return list;
+  // }
 
-    final listQS = querySnapshot.docs;
-
-    for (var document in listQS) {
-      document.data();
-      list.add(document.data());
-    }
-    return list;
-  }
+  // getStreamMessage() async {
+  //   final streamQS = await _firstore.collection("messages").snapshots();
+  //   // print(streamQS);
+  //   await for (var snapshot in streamQS) {
+  //     print(snapshot);
+  //     print(snapshot.docs.length);
+  //     for (var document in snapshot.docs) {
+  //       print(document.data());
+  //     }
+  //   }
+  // }
 
   @override
   void initState() {
@@ -49,9 +61,10 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
               icon: Icon(Icons.close),
               onPressed: () async {
-                print(123);
-                final data = await fetchMessages();
-                print(data);
+                checkUser();
+                // getStreamMessage();
+                // final data = await fetchMessages();
+                // print(data);
                 //Implement logout functionality
               }),
         ],
@@ -63,27 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(
-              child: Container(
-                child: FutureBuilder(
-                  future: fetchMessages(),
-                  builder: (context, snap) {
-                    List messages = snap.data;
-                    return ListView.builder(
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        return Container(
-                          color: Colors.blue,
-                          margin: EdgeInsets.all(10),
-                          padding: EdgeInsets.all(10),
-                          child: Text(snap.data[index]["message"]),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
+            MessageStream(),
             Container(
               decoration: kMessageContainerDecoration,
               child: Row(
@@ -96,6 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       controller: textEditingController,
                       onChanged: (value) {
+                        messageText = value;
                         print("$value");
                       },
                       decoration: kMessageTextFieldDecoration,
@@ -103,11 +97,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   TextButton(
                     onPressed: () async {
-                      await _firstore.collection("messages").add({
-                        "sender": "${user!.email}",
-                        "message": "${textEditingController.text}",
-                      });
-                      textEditingController.clear();
+                      if (textEditingController.text.trim() != "") {
+                        await _firstore.collection("messages").add({
+                          "sender": "${user!.email}",
+                          "message": "${messageText}",
+                          "timestamp": Timestamp.now()
+                        });
+                        textEditingController.clear();
+                      }
                     },
                     child: Text(
                       'Send',
@@ -120,6 +117,79 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class MessageStream extends StatelessWidget {
+  MessageStream({
+    super.key,
+  });
+  final currentUser = user?.email ?? "";
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: FirebaseFirestore.instance
+          .collection("messages")
+          .orderBy("timestamp", descending: false)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final messages = snapshot.data!.docs;
+
+        if (!snapshot.hasData) {
+          Text("Data fetching error");
+        }
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index].data();
+                final isMe = currentUser == message['sender'];
+                return Column(
+                  crossAxisAlignment:
+                      isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      " ${message['sender']}   ",
+                      style: TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isMe ? Colors.blue : Colors.pink,
+                        borderRadius: isMe
+                            ? BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10),
+                              )
+                            : BorderRadius.only(
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10),
+                              ),
+                      ),
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Text(
+                            "${message['message']}",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
